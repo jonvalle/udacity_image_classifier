@@ -7,18 +7,15 @@ from torchvision import datasets, transforms, models
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 
-basepath = '../Image_Classifier/'
-#basepath = './'
-supp_models = {'resnet18': 'models.resnet18(pretrained=True)',
-                  'vgg16': 'models.vgg16(pretrained=True)',
-                  'vgg13': 'models.vgg13(pretrained=True)',
-                'alexnet': 'models.alexnet(pretrained=True)'}
+basepath = ''
+supp_models = {'vgg16': 'models.vgg16(pretrained=True)',
+               'vgg13': 'models.vgg13(pretrained=True)'}
 
 def process_image(image):
     ''' Scales, crops, and normalizes a PIL image for a PyTorch model,
         returns an Numpy array *** ERROR: SHOULD RETURN A TENSOR ***
     '''
-    # TODO: Process a PIL image for use in a PyTorch model
+    # Process a PIL image for use in a PyTorch model
     img = Image.open(image)
     img = img.resize((256,256))
     img = img.crop((0,0,224,224))
@@ -26,7 +23,7 @@ def process_image(image):
     means = np.array([0.485, 0.456, 0.406])
     std = np.array([0.229, 0.224, 0.225])
 
-    # TODO: convert color to floats 0-1, normalize, etc
+    # convert color to floats 0-1, normalize, etc
     np_image = np.array(img)
     np_image_float = np.array(img)/255
     np_image_normalized = (np_image_float-means)/std
@@ -56,13 +53,13 @@ def imshow(image, ax=None, title=None):
     return ax
 
 def generate_dataset(data_type, data_dir):
-    basepath = data_dir
+    path = data_dir
     if (data_type == 'train'):
-        basepath += '/train'
+        path += '/train'
     elif (data_type == 'valid'):
-        basepath += '/valid'
+        path += '/valid'
     elif (data_type == 'test'):
-        basepath += '/test'
+        path += '/test'
     else:
         #some error
         return None
@@ -81,7 +78,7 @@ def generate_dataset(data_type, data_dir):
                                 transforms.Normalize([0.485, 0.456, 0.406],
                                                      [0.229, 0.224, 0.225])])
 
-    image_datasets = datasets.ImageFolder(basepath, transform=data)
+    image_datasets = datasets.ImageFolder(path, transform=data)
 
     if (data_type == 'train'):
         dataloader = torch.utils.data.DataLoader(image_datasets, batch_size=64, shuffle=True)
@@ -163,6 +160,5 @@ def display_image_and_chart(img, probs, labels):
     ax2.set_xlabel('Probability')
 
     plt.tight_layout()
-
     plt.show()
-    print('Chart printed')
+    print('Chart printed')    

@@ -7,6 +7,7 @@ That is, you'll pass in a single image /path/to/image and return the flower name
         Return top KKK most likely classes: python predict.py input checkpoint --top_k 3
         Use a mapping of categories to real names: python predict.py input checkpoint --category_names cat_to_name.json
         Use GPU for inference: python predict.py input checkpoint --gpu
+        Example:  python predict.py --top_k 8 --gpu --checkpoint checkpoint.pth --input flowers/valid/38/image_05819.jpg
 '''
 
 import torch
@@ -52,7 +53,6 @@ def main():
                   utils.basepath+arguments.input,
                   cat_to_name)
 
-
     print("**INFO: Prediction Ended!")
 
 
@@ -60,25 +60,25 @@ def read_args():
     # Creates Argument Parser object named parser
     parser = argparse.ArgumentParser()
 
-    # Argument 1: path to load
+    # Argument 1: path to load. Hint: checkpoint_vgg13.pth
     parser.add_argument('--checkpoint', type = str, required = True,
                         help = 'path to the saved trained model')
 
-    # Argument 2: path to image file to check
-    parser.add_argument('--input', type = str,  required = True, default = 'flowers/test/37/image_03741.jpg',
+    # Argument 2: path to image file to check. Hint: flowers/test/37/image_03741.jpg
+    parser.add_argument('--input', type = str, required = True,
                         help = 'image path to be predicted')
 
-    # Argument 3: top results
+    # Arguments 3: training hyperparameters
     parser.add_argument('--top_k', type = int, default = '5',
                         help = 'display top KKK most likely classes')
 
-    # Argument 4: ids of folders with mapping to images - source of truth
     parser.add_argument('--category_names', type = str, default = 'cat_to_name.json',
                         help = 'mapping of categories to real names')
 
     # Argument 5: choose archietcture
     parser.add_argument('--gpu', action='store_true',
                         help = 'use gpu acceleration if available')
+
 
     # Assigns variable in_args to parse_args()
     in_args = parser.parse_args()
@@ -92,7 +92,6 @@ def load_checkpoint(filepath, processor):
     else:
         checkpoint = torch.load(filepath, map_location=processor)
     print('**INFO: Loaded checkpoint')
-
     return checkpoint
 
 def predict(image_path, model, topk=5):
@@ -125,7 +124,7 @@ def print_results(flower_probs, flower_classes, img_mapping, img_path, categorie
         most_prob_flower = get_class_value(categories_names,most_prob_flower_id_folder)
         flower_names.append(most_prob_flower)
         print("The image has a {:.2f}% probability that is a {}".format(float(most_prob),most_prob_flower))
-    utils.display_image_and_chart(img_path, most_prob, flower_names)
+    #utils.display_image_and_chart(img_path, most_prob, flower_names)
 
 def load_cat_names(cat_to_name):
     with open(cat_to_name, 'r') as f:
@@ -136,8 +135,8 @@ def get_folder_key(mydict,value):
     return list(mydict.keys())[list(mydict.values()).index(value)]
 
 def get_class_value(categories_names, key):
-    return categories_names[key]
-
+    return categories_names[key]    
+    
 # Call to main function to run the program
 if __name__ == "__main__":
     main()
