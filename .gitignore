@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# AI Project checkpoints 
+#  pre-trained model
+#  saved profile 
+
 # C extensions
 *.so
 
