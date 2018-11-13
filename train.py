@@ -7,7 +7,7 @@ Train a new network on a data set with train.py
         Choose architecture: python train.py data_dir --arch "vgg13"
         Set hyperparameters: python train.py data_dir --learning_rate 0.01 --hidden_units 512 --epochs 20
         Use GPU for training: python train.py data_dir --gpu
-        Example: python train.py --gpu --data_dir flowers --arch vgg13 --epochs 1
+        Example: python train.py --data_dir flowers --arch vgg13 --epochs 1 --gpu 
 '''
 
 import torch
@@ -24,26 +24,28 @@ def main():
     #read parameters
     arguments = read_args()
 
-    #generate and normalize images
-    train_dataset, train_classes_ids = utils.generate_dataset('train', arguments.data_dir)
-
     #download pre-trained model and initialize
     model, criterion, optimizer = utils.create_model(arguments.arch,
                                                arguments.hidden_units,
                                                n_classes,
                                                arguments.learning_rate,
                                                dropout_per)
-
+    
+    #gpu or cpu
     processor = utils.get_processor(arguments.gpu)
 
+    #generate and normalize images for training and validation
+    train_dataset, train_classes_ids = utils.generate_dataset('train', arguments.data_dir)
+    valid_dataset, test_classes_ids = utils.generate_dataset('valid', arguments.data_dir)
+ 
     #train network
-    model, optimizer = do_deep_learning(model, 
-                                        train_dataset, 
-                                        arguments.epochs, 
-                                        10, #print every
+    model, optimizer = do_deep_learning(processor, 
+                                        model, 
                                         criterion, 
                                         optimizer, 
-                                        processor)
+                                        arguments.epochs, 
+                                        train_dataset, 
+                                        valid_dataset)
 
     #test network with test dataset
     test_dataset, test_classes_ids = utils.generate_dataset('test', arguments.data_dir)
@@ -106,18 +108,19 @@ def read_args():
     return in_args
 
 
-def do_deep_learning(model, trainloader, epochs, print_every, criterion, optimizer, device):
+def do_deep_learning(processor, model, criterion, optimizer, epochs, trainloader, validloader):
     steps = 0
+    print_every = 10
     print('**INFO: Start deep learning')
     
     # change to cuda/cpu
-    model.to(device)
+    model.to(processor)
     model.train()
 
     for e in range(epochs):
         running_loss = 0
         for ii, (inputs, labels) in enumerate(trainloader):
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs, labels = inputs.to(processor), labels.to(processor)
 
             optimizer.zero_grad()
 
@@ -129,14 +132,42 @@ def do_deep_learning(model, trainloader, epochs, print_every, criterion, optimiz
 
             running_loss += loss.item()
 
-            if steps % print_every == 0:
-                print("Epoch: {}/{}... ".format(e+1, epochs),
-                      "Loss: {:.4f}".format(running_loss/print_every))
-
+            if True or steps % print_every == 0:
+                # Make sure network is in eval mode for inference
+                model.eval()
+            
+                # Turn off gradients for validation, saves memory and computations
+                with torch.no_grad():
+                    test_loss, accuracy = validation(model, validloader, criterion, processor)
+                
+                print("Epoch: {}/{}.. ".format(e+1, epochs),
+                      "Training Loss: {:.3f}.. ".format(running_loss/print_every),
+                      "Validation Loss: {:.3f}.. ".format(test_loss/len(validloader)),
+                      "Validation Accuracy: {:.3f}".format(accuracy/len(validloader)))
+            
+                # Make sure training is back on
                 running_loss = 0
+                model.train()
 
     print("**INFO: Finished Deep Learning")
     return (model, optimizer)
+
+# Implement a function for the validation pass
+def validation(model, testloader, criterion, processor):
+    test_loss = 0
+    accuracy = 0
+    for images, labels in testloader:
+        images = images.to(processor)
+        labels = labels.to(processor)
+        
+        output = model.forward(images)
+        test_loss += criterion(output, labels).item()
+
+        ps = torch.exp(output)
+        equality = (labels.data == ps.max(dim=1)[1])
+        accuracy += equality.type(torch.FloatTensor).mean()
+    
+    return test_loss, accuracy
 
 def check_accuracy_on_test(testloader, model, processor):
     correct = 0
