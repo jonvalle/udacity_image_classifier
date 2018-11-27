@@ -20,7 +20,9 @@ This is the final work for a course called: "AI with Python Nanodegree"
 * MatplotLib (incl in Conda)
 * PILow (incl in Conda)
 * Jupyter Notebook (incl in Conda)
-* Pytorch
+* Pytorch 
+** conda install pytorch-cpu -c pytorch
+** pip3 install torchvision
 
 ## Jupyter Notebook
 1. Clone this repo
